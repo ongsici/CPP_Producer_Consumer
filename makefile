@@ -1,11 +1,15 @@
-main: main.o buffer.o
-	g++ -g main.o buffer.o -o main
+CXX = g++
+CXXFLAGS = -std=c++20 -Wall -g
+TARGET = main
+
+${TARGET}: main.o buffer.o
+	${CXX} ${CXXFLAGS} main.o buffer.o -o ${TARGET}
 
 main.o: main.cpp buffer.h
-	g++ -g -Wall -c main.cpp
+	${CXX} ${CXXFLAGS} -c main.cpp
 
 buffer.o: buffer.cpp buffer.h
-	g++ -g -Wall -c buffer.cpp
+	${CXX} ${CXXFLAGS} -c buffer.cpp
 
 clean: 
-	rm -f *.o main
+	rm -f *.o ${TARGET}
