@@ -9,14 +9,14 @@
 using namespace std;
 const int WAIT_TIME = 10;
 
-void producer(int num_jobs, binary_semaphore &mutex, counting_semaphore<> &space, counting_semaphore<> &item, CircularBuffer &buffer_queue){
+void producer(int num_jobs, int thread_id, binary_semaphore &mutex, counting_semaphore<> &space, counting_semaphore<> &item, CircularBuffer &buffer_queue){
     for (int i=0; i < num_jobs; i++){
         int randNum = (rand() % 10)+1; // generates random number from 1 to 10, inclusive
-        cout << "Random number: " << randNum << endl;
+        // cout << "Random number: " << randNum << endl;
         if (space.try_acquire_for(chrono::seconds(WAIT_TIME))){
             mutex.acquire();
             buffer_queue.push_buffer_head(randNum);
-            cout << "Producer pushed integer to buffer" << endl;
+            cout << "Producer thread " << thread_id << " pushed " << randNum << " to buffer" << endl;
             mutex.release();
             item.release();
         } 
@@ -27,14 +27,14 @@ void producer(int num_jobs, binary_semaphore &mutex, counting_semaphore<> &space
     }
 }
 
-void consumer(binary_semaphore &mutex, counting_semaphore<> &space, counting_semaphore<> & item, CircularBuffer &buffer_queue){
+void consumer(int thread_id, binary_semaphore &mutex, counting_semaphore<> &space, counting_semaphore<> & item, CircularBuffer &buffer_queue){
     int popped_int;
     if (item.try_acquire_for(chrono::seconds(WAIT_TIME))){
         mutex.acquire();
         popped_int = buffer_queue.pop_buffer_tail();
         mutex.release();
         space.release();
-        cout << "Executing job with duration: " << popped_int << "s" << endl;
+        cout << "Consumer thread " << thread_id << " executing job with duration: " << popped_int << "s" << endl;
         sleep(popped_int);
     } else {
         cout << "Item semaphore not acquired within 10s, exiting..." << endl;
@@ -50,7 +50,7 @@ int main(int arg_count, char* args[]) {
         cout << "Please try again." << endl;
         exit(1);
     }
-
+    
     const int size = stoi(args[1]);
     const int job_count = stoi(args[2]);
     const int num_producers = stoi(args[3]);
@@ -67,15 +67,28 @@ int main(int arg_count, char* args[]) {
 
     CircularBuffer buffer_queue(size);
 
-    thread producer_thread(producer, job_count, ref(mutex), ref(space), ref(item), ref(buffer_queue));
-    thread consumer_thread(consumer, ref(mutex), ref(space), ref(item), ref(buffer_queue));
+    thread prodThreadArray[num_producers];
+    thread consumerThreadArray[num_consumers];
 
-    // buffer_queue.print_buffer();
-    // cout << "Head is at: " << buffer_queue.get_head() << endl;
-    // cout << "Tail is at: " << buffer_queue.get_tail() << endl;
+    for (int i=0; i<num_producers; i++){
+        prodThreadArray[i] = thread(producer, job_count, i, ref(mutex), ref(space), ref(item), ref(buffer_queue));
+    }
 
-    producer_thread.join();
-    consumer_thread.join();
+    for (int j=0; j<num_consumers; j++){
+        consumerThreadArray[j] = thread(consumer, j, ref(mutex), ref(space), ref(item), ref(buffer_queue));
+    }
+
+    for (int i=0; i<num_producers; i++){
+        prodThreadArray[i].join();
+    }
+
+    for (int j=0; j<num_consumers; j++){
+        consumerThreadArray[j].join();
+    }
+
+    buffer_queue.print_buffer();
+    cout << "Head is at: " << buffer_queue.get_head() << endl;
+    cout << "Tail is at: " << buffer_queue.get_tail() << endl;
 
     return 0;
 }
