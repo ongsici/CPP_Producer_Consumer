@@ -12,7 +12,6 @@ const int WAIT_TIME = 10;
 void producer(int num_jobs, int thread_id, binary_semaphore &mutex, counting_semaphore<> &space, counting_semaphore<> &item, CircularBuffer &buffer_queue){
     for (int i=0; i < num_jobs; i++){
         int randNum = (rand() % 10)+1; // generates random number from 1 to 10, inclusive
-        // cout << "Random number: " << randNum << endl;
         if (space.try_acquire_for(chrono::seconds(WAIT_TIME))){
             mutex.acquire();
             buffer_queue.push_buffer_head(randNum);
@@ -48,47 +47,53 @@ int main(int arg_count, char* args[]) {
         cout << "This program requires 4 arguments to be parsed: (1) Size of queue, (2) no. of jobs to generate for each producer, (3) no. of producers and (4) no. of consumers." << endl;
         cout << arg_count-1 << " argument(s) were received." << endl;
         cout << "Please try again." << endl;
-        exit(1);
+        return 1;
     }
     
-    const int size = stoi(args[1]);
-    const int job_count = stoi(args[2]);
-    const int num_producers = stoi(args[3]);
-    const int num_consumers = stoi(args[4]);
+    try {
+        const int size = stoi(args[1]);
+        const int job_count = stoi(args[2]);
+        const int num_producers = stoi(args[3]);
+        const int num_consumers = stoi(args[4]);
 
-    binary_semaphore mutex(1);
-    counting_semaphore<> space(size);
-    counting_semaphore<> item(0);
+        binary_semaphore mutex(1);
+        counting_semaphore<> space(size);
+        counting_semaphore<> item(0);
 
-    cout << "buffer size: " << size << endl;
-    cout << "job count: " << job_count << endl;
-    cout << "num producers: " << num_producers << endl;
-    cout << "num consumers: " << num_consumers << endl;
+        cout << "buffer size: " << size << endl;
+        cout << "job count: " << job_count << endl;
+        cout << "num producers: " << num_producers << endl;
+        cout << "num consumers: " << num_consumers << endl;
 
-    CircularBuffer buffer_queue(size);
+        CircularBuffer buffer_queue(size);
 
-    thread prodThreadArray[num_producers];
-    thread consumerThreadArray[num_consumers];
+        thread prodThreadArray[num_producers];
+        thread consumerThreadArray[num_consumers];
 
-    for (int i=0; i<num_producers; i++){
-        prodThreadArray[i] = thread(producer, job_count, i, ref(mutex), ref(space), ref(item), ref(buffer_queue));
+        for (int i=0; i<num_producers; i++){
+            prodThreadArray[i] = thread(producer, job_count, i, ref(mutex), ref(space), ref(item), ref(buffer_queue));
+        }
+
+        for (int j=0; j<num_consumers; j++){
+            consumerThreadArray[j] = thread(consumer, j, ref(mutex), ref(space), ref(item), ref(buffer_queue));
+        }
+
+        for (int i=0; i<num_producers; i++){
+            prodThreadArray[i].join();
+        }
+
+        for (int j=0; j<num_consumers; j++){
+            consumerThreadArray[j].join();
+        }
+
+        buffer_queue.print_buffer();
+        cout << "Head is at: " << buffer_queue.get_head() << endl;
+        cout << "Tail is at: " << buffer_queue.get_tail() << endl;
     }
-
-    for (int j=0; j<num_consumers; j++){
-        consumerThreadArray[j] = thread(consumer, j, ref(mutex), ref(space), ref(item), ref(buffer_queue));
+    catch (const exception& e) {
+        cerr << "Exception " << e.what() << endl ;
+        return 1;
     }
-
-    for (int i=0; i<num_producers; i++){
-        prodThreadArray[i].join();
-    }
-
-    for (int j=0; j<num_consumers; j++){
-        consumerThreadArray[j].join();
-    }
-
-    buffer_queue.print_buffer();
-    cout << "Head is at: " << buffer_queue.get_head() << endl;
-    cout << "Tail is at: " << buffer_queue.get_tail() << endl;
 
     return 0;
 }
