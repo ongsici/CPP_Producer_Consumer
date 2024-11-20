@@ -42,7 +42,29 @@ int main(int arg_count, char* args[]) {
     cout << "num producers: " << num_producers << endl;
     cout << "num consumers: " << num_consumers << endl;
 
-    CircularBuffer buffer(5);
+    CircularBuffer buffer_queue(size);
+
+    buffer_queue.push_buffer_head(1);
+    buffer_queue.push_buffer_head(2);
+    buffer_queue.push_buffer_head(3);
+    buffer_queue.push_buffer_head(4);
+    buffer_queue.push_buffer_head(5);
+
+    buffer_queue.print_buffer();
+    cout << "Head is at: " << buffer_queue.get_head() << endl;
+    cout << "Tail is at: " << buffer_queue.get_tail() << endl;
+
+    cout << buffer_queue.pop_buffer_tail() << endl;
+    cout << buffer_queue.pop_buffer_tail() << endl;
+    cout << buffer_queue.pop_buffer_tail() << endl;
+    cout << buffer_queue.pop_buffer_tail() << endl;
+    cout << buffer_queue.pop_buffer_tail() << endl;
+    cout << buffer_queue.pop_buffer_tail() << endl;
+
+    buffer_queue.print_buffer();
+    cout << "Head is at: " << buffer_queue.get_head() << endl;
+    cout << "Tail is at: " << buffer_queue.get_tail() << endl;
+
 
     return 0;
 }
