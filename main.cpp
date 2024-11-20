@@ -16,6 +16,7 @@ void producer(int num_jobs, binary_semaphore &mutex, counting_semaphore<> &space
         if (space.try_acquire_for(chrono::seconds(WAIT_TIME))){
             mutex.acquire();
             buffer_queue.push_buffer_head(randNum);
+            cout << "Producer pushed integer to buffer" << endl;
             mutex.release();
             item.release();
         } 
@@ -65,26 +66,16 @@ int main(int arg_count, char* args[]) {
     cout << "num consumers: " << num_consumers << endl;
 
     CircularBuffer buffer_queue(size);
-    producer(job_count, mutex, space, item, buffer_queue);
-    producer(job_count, mutex, space, item, buffer_queue);
-    producer(job_count, mutex, space, item, buffer_queue);
-    producer(job_count, mutex, space, item, buffer_queue);
 
-    buffer_queue.print_buffer();
-    cout << "Head is at: " << buffer_queue.get_head() << endl;
-    cout << "Tail is at: " << buffer_queue.get_tail() << endl;
+    thread producer_thread(producer, job_count, ref(mutex), ref(space), ref(item), ref(buffer_queue));
+    thread consumer_thread(consumer, ref(mutex), ref(space), ref(item), ref(buffer_queue));
 
-    consumer(mutex, space, item, buffer_queue);
+    // buffer_queue.print_buffer();
+    // cout << "Head is at: " << buffer_queue.get_head() << endl;
+    // cout << "Tail is at: " << buffer_queue.get_tail() << endl;
 
-    buffer_queue.print_buffer();
-    cout << "Head is at: " << buffer_queue.get_head() << endl;
-    cout << "Tail is at: " << buffer_queue.get_tail() << endl;
-
-    consumer(mutex, space, item, buffer_queue);
-
-    buffer_queue.print_buffer();
-    cout << "Head is at: " << buffer_queue.get_head() << endl;
-    cout << "Tail is at: " << buffer_queue.get_tail() << endl;
+    producer_thread.join();
+    consumer_thread.join();
 
     return 0;
 }
