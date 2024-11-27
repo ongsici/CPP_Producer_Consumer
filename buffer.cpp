@@ -9,7 +9,6 @@ CircularBuffer::CircularBuffer(int size){
     buffer_size = size;
     head = 0; // index of next empty slot to insert into buffer
     tail = 0; // index of oldest value in buffer 
-    cout << "Created a circular buffer of size: " << size << endl;
 }
 
 int CircularBuffer::pop_buffer_tail(){

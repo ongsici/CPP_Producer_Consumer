@@ -60,10 +60,13 @@ int main(int arg_count, char* args[]) {
         counting_semaphore<> space(size);
         counting_semaphore<> item(0);
 
-        cout << "buffer size: " << size << endl;
-        cout << "job count: " << job_count << endl;
-        cout << "num producers: " << num_producers << endl;
-        cout << "num consumers: " << num_consumers << endl;
+        cout << "========== [INFO] ==========" << endl;
+        cout << "The following input parameters were received: " << endl;
+        cout << "Queue size: " << size << endl;
+        cout << "Jobs to generate per producer: " << job_count << endl;
+        cout << "Number of producers: " << num_producers << endl;
+        cout << "Number of consumers: " << num_consumers << endl;
+        cout << "============================" << endl;
 
         CircularBuffer buffer_queue(size);
 
